@@ -8,10 +8,15 @@ import {
   Alert,
   Image,
   Button,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TextInput,
 } from "react-native";
 import React, { useRef, useState, useEffect } from "react";
 import { Camera } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
+import * as ImagePicker from "expo-image-picker";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -21,6 +26,13 @@ export default function App() {
   const [cameraPermission, setCameraPermission] = useState(false);
   const [photo, setPhoto] = useState();
   const [libraryPermission, setLibraryPermission] = useState(false);
+  const [photoFromLibrary, setPhotoFromLibrary] = useState(null);
+  const [image, setImage] = useState(null);
+  const [detected, setDetected] = useState(null);
+  const [name, setName] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [company, setCompany] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -32,6 +44,11 @@ export default function App() {
       setLibraryPermission(requestLibraryPermission.status === "granted");
     })();
   }, []);
+
+  const onChangeName = (name) => setName(name);
+  const onChangePhoneNumber = (phoneNumber) => setPhoneNumber(phoneNumber);
+  const onChangeEmail = (email) => setEmail(email);
+  const onChangeCompany = (company) => setCompany(company);
 
   if (cameraPermission === undefined) {
     return <Text>Requesting Permission</Text>;
@@ -64,6 +81,17 @@ export default function App() {
     });
   };
 
+  const chooseFromLibrary = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      base64: true,
+    });
+    if (!result.cancelled) {
+      setPhotoFromLibrary(result.uri);
+      setImage(result.base64);
+    }
+  };
+
   if (photo) {
     return (
       <View style={styles.container}>
@@ -89,6 +117,82 @@ export default function App() {
           />
         </View>
       </View>
+    );
+  }
+
+  if (image) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.chooseFromLibrary}
+      >
+        <View>
+          <Button
+            title="Pick an image from library"
+            onPress={() => {
+              setImage(null);
+              setName(null);
+              setPhoneNumber(null);
+              setEmail(null);
+              setCompany("");
+              setDetected("");
+              chooseFromLibrary();
+            }}
+          />
+          <Button
+            title="Cancel"
+            onPress={() => {
+              setImage(null);
+              setPhoto(null);
+            }}
+          />
+          <View style={styles.photoFromLibraryImageView}>
+            <Image
+              source={{ uri: photoFromLibrary }}
+              style={styles.photoFromLibrary}
+            />
+          </View>
+          <View style={styles.photoFromLibraryView}>
+            <ScrollView>
+              <Text style={styles.photoFromLibraryDetectText}>{detected}</Text>
+            </ScrollView>
+          </View>
+          <View style={styles.photoFromLibraryInputView}>
+            <Text>Name</Text>
+            <TextInput
+              style={styles.textInput}
+              value={name}
+              onChangeText={onChangeName}
+            />
+            <Text>Phone Number</Text>
+            <TextInput
+              style={styles.textInput}
+              value={phoneNumber}
+              onChangeText={onChangePhoneNumber}
+            />
+            <Text>Email</Text>
+            <TextInput
+              style={styles.textInput}
+              value={email}
+              onChangeText={onChangeEmail}
+            />
+            <Text>Company</Text>
+            <TextInput
+              style={styles.textInput}
+              value={company}
+              onChangeText={onChangeCompany}
+              placeholder="(Optional)"
+            />
+            <Button
+              title="Save"
+              style={{}}
+              onPress={() => {
+                setPhoto(null);
+              }}
+            />
+          </View>
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -119,7 +223,10 @@ export default function App() {
             <TouchableOpacity style={styles.t1} onPress={() => launchCamera()}>
               <Text style={styles.text1}>Take Photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.t1}>
+            <TouchableOpacity
+              style={styles.t1}
+              onPress={() => chooseFromLibrary()}
+            >
               <Text style={styles.text1}>Choose From Library</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.t1}>
@@ -213,5 +320,37 @@ const styles = StyleSheet.create({
     height: 150,
     justifyContent: "space-between",
     marginTop: 50,
+  },
+  chooseFromLibrary: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: -50,
+    marginTop: 50,
+  },
+  photoFromLibrary: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT / 4,
+  },
+  photoFromLibraryImageView: {
+    flex: 1.2,
+  },
+  photoFromLibraryView: {
+    flex: 1,
+  },
+  photoFromLibraryInputView: {
+    flex: 2,
+    alignItems: "center",
+  },
+  textInput: {
+    height: 40,
+    width: SCREEN_WIDTH - 100,
+    borderWidth: 3,
+    borderColor: "black",
+    borderRadius: 4,
+    fontSize: 20,
+  },
+  photoFromLibraryDetectText: {
+    fontSize: 25,
   },
 });
