@@ -42,6 +42,13 @@ export default function App() {
   const [email, setEmail] = useState(null);
   const [company, setCompany] = useState("");
   const [information, setInformation] = useState(null);
+  const [listView, setListView] = useState(false);
+  const [editData, setEditData] = useState({
+    name: "",
+    phoneNumber: "",
+    email: "",
+    company: "",
+  });
 
   useEffect(() => {
     loadInformation();
@@ -130,6 +137,12 @@ export default function App() {
   const onChangePhoneNumber = (phoneNumber) => setPhoneNumber(phoneNumber);
   const onChangeEmail = (email) => setEmail(email);
   const onChangeCompany = (company) => setCompany(company);
+  const onChangeEditInformation = (name, value) => {
+    setEditData({
+      ...editData,
+      [name]: value,
+    });
+  };
 
   if (cameraPermission === undefined) {
     return <Text>Requesting Permission</Text>;
@@ -197,6 +210,68 @@ export default function App() {
       Alert.alert("Saved!");
       setImage(null);
     }
+  };
+
+  const backToFalse = async () => {
+    Object.keys(information).map((key) => {
+      if (information[key].edit === true) {
+        information[key].edit = false;
+      }
+    });
+    await saveInformation(information, STORAGE_KEY);
+  };
+
+  const edit = async (key) => {
+    const newInformation = { ...information };
+    if (newInformation[key].edit === false) {
+      newInformation[key].edit = true;
+      setEditData({
+        name: information[key].name,
+        phoneNumber: information[key].phoneNumber,
+        email: information[key].email,
+        company: information[key].company ? information[key].company : "",
+      });
+    } else {
+      newInformation[key].edit = false;
+    }
+    setInformation(newInformation);
+    await saveInformation(newInformation, STORAGE_KEY);
+  };
+
+  const editInformation = async (key) => {
+    const newInformation = { ...information };
+    newInformation[key].edit = false;
+    newInformation[key].name = editData.name;
+    newInformation[key].phoneNumber = editData.phoneNumber;
+    newInformation[key].email = editData.email;
+    newInformation[key].company = editData.company;
+    setInformation(newInformation);
+    await saveInformation(newInformation, STORAGE_KEY);
+    setSearchedArray(newInformation);
+    setEditData({
+      name: "",
+      phoneNumber: "",
+      email: "",
+      company: "",
+    });
+  };
+
+  const deleteInformation = async (key) => {
+    const newInformation = { ...information };
+    Alert.alert("Delete Businss Card", "Are you sure?", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          delete newInformation[key];
+          setInformation(newInformation);
+          await saveInformation(newInformation, STORAGE_KEY);
+          setSearchedArray(newInformation);
+        },
+      },
+    ]);
+    return;
   };
 
   if (photo) {
@@ -304,6 +379,111 @@ export default function App() {
     );
   }
 
+  if (listView) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.listViewContainer}
+      >
+        <Button
+          title="Back to Main Menu"
+          onPress={() => {
+            setListView(false);
+            backToFalse();
+          }}
+        />
+        <ScrollView style={styles.listViewScrollView}>
+          {Object.keys(information).map((key) => (
+            <View key={key}>
+              {!information[key].edit ? (
+                <View>
+                  {information[key].company !== "" && (
+                    <Text style={styles.listViewText}>
+                      Company: {information[key].company}
+                    </Text>
+                  )}
+                  <Text style={styles.listViewText}>
+                    Name: {information[key].name}
+                  </Text>
+                  <Text style={styles.listViewText}>
+                    P.N: {information[key].phoneNumber}
+                  </Text>
+                  <Text style={styles.listViewText}>
+                    Email: {information[key].email}
+                  </Text>
+                </View>
+              ) : (
+                <View>
+                  <Text style={styles.listViewText}>Company:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("company", text);
+                    }}
+                    value={editData.company}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                  <Text style={styles.listViewText}>Name:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("name", text);
+                    }}
+                    value={editData.name}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                  <Text style={styles.listViewText}>P.N:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("phoneNumber", text);
+                    }}
+                    value={editData.phoneNumber}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                  <Text style={styles.listViewText}>Email:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("email", text);
+                    }}
+                    value={editData.email}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                </View>
+              )}
+              <View style={styles.listViewButtonView}>
+                <Button title="Edit" onPress={() => edit(key)} />
+                <Button
+                  title="Delete"
+                  onPress={() => {
+                    deleteInformation(key);
+                  }}
+                />
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {cameraOn ? (
@@ -340,7 +520,12 @@ export default function App() {
             <TouchableOpacity style={styles.t1}>
               <Text style={styles.text1}>Search</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.t1}>
+            <TouchableOpacity
+              style={styles.t1}
+              onPress={() => {
+                setListView(true);
+              }}
+            >
               <Text style={styles.text1}>List</Text>
             </TouchableOpacity>
           </View>
@@ -460,5 +645,29 @@ const styles = StyleSheet.create({
   },
   photoFromLibraryDetectText: {
     fontSize: 25,
+  },
+  listViewContainer: {
+    flex: 1,
+    marginTop: 50,
+    marginBottom: 50,
+  },
+  listViewScrollView: {
+    height: SCREEN_HEIGHT - 300,
+  },
+  listViewText: {
+    fontSize: 25,
+  },
+  listViewTextInput: {
+    height: 50,
+    marginLeft: 5,
+    width: SCREEN_WIDTH - 10,
+    borderWidth: 3,
+    borderColor: "black",
+    borderRadius: 4,
+    fontSize: 30,
+  },
+  listViewButtonView: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
   },
 });
