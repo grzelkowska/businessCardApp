@@ -17,6 +17,11 @@ import React, { useRef, useState, useEffect } from "react";
 import { Camera } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
 import * as ImagePicker from "expo-image-picker";
+import { GOOGLE_CLOUD_VISION_API_KEY } from "./secret";
+import detectItems from "./detectItems";
+
+const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
+const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -28,7 +33,7 @@ export default function App() {
   const [libraryPermission, setLibraryPermission] = useState(false);
   const [photoFromLibrary, setPhotoFromLibrary] = useState(null);
   const [image, setImage] = useState(null);
-  const [detected, setDetected] = useState(null);
+  const [detected, setDetected] = useState("");
   const [name, setName] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState(null);
   const [email, setEmail] = useState(null);
@@ -44,6 +49,62 @@ export default function App() {
       setLibraryPermission(requestLibraryPermission.status === "granted");
     })();
   }, []);
+
+  useEffect(() => {
+    setName(null);
+    setPhoneNumber(null);
+    setEmail(null);
+    setCompany("")
+    callGoogleVisionAsync(image)
+  }, [image]);
+
+  useEffect(() => {
+    const data = detectItems(detected);
+    setName(data.name);
+    setPhoneNumber(data.phoneNumber)
+    setEmail(data.email)
+  }, [detected])
+
+  const generateBody = (image) => {
+    const body = {
+      requests: [
+        {
+          image: {
+            content: image,
+          },
+          features: [
+            {
+              type: "TEXT_DETECTION",
+              maxResults: 1,
+            },
+          ],
+        },
+      ],
+    };
+    return body;
+  };
+
+  const callGoogleVisionAsync = async (image) => {
+    const body = generateBody(image);
+    const responseFromGoogle = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        const googleDetected = result.responses[0].fullTextAnnotation;
+        setDetected(googleDetected.text);
+        detectItems(detected);
+      });
+
+    return responseFromGoogle
+      ? responseFromGoogle
+      : { text: "No text detected." };
+  };
 
   const onChangeName = (name) => setName(name);
   const onChangePhoneNumber = (phoneNumber) => setPhoneNumber(phoneNumber);
