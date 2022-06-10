@@ -71,21 +71,23 @@ export default function App() {
           style={styles.img}
           source={{ uri: "data:image/jpg;base64," + photo.base64 }}
         ></Image>
-        {libraryPermission ? (
+        <View style={styles.photoButtonView}>
+          {libraryPermission ? (
+            <Button
+              title="Save and Continue"
+              onPress={() => {
+                savePhoto();
+              }}
+            />
+          ) : undefined}
+          <Button title="Don't save and continue" onPress={() => {}} />
           <Button
-            title="Save and Continue"
+            title="Discard"
             onPress={() => {
-              savePhoto();
+              setPhoto(undefined);
             }}
           />
-        ) : undefined}
-        <Button title="Don't save and continue" onPress={() => {}} />
-        <Button
-          title="Discard"
-          onPress={() => {
-            setPhoto(undefined);
-          }}
-        />
+        </View>
       </View>
     );
   }
@@ -206,6 +208,10 @@ const styles = StyleSheet.create({
     width: 400,
     height: 300,
     resizeMode: "center",
-    // flex: 1,
+  },
+  photoButtonView: {
+    height: 150,
+    justifyContent: "space-between",
+    marginTop: 50,
   },
 });
