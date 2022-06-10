@@ -19,9 +19,12 @@ import * as MediaLibrary from "expo-media-library";
 import * as ImagePicker from "expo-image-picker";
 import { GOOGLE_CLOUD_VISION_API_KEY } from "./secret";
 import detectItems from "./detectItems";
+import saveInformation from "./saveInformation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
+const STORAGE_KEY = "@NPEC";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -38,6 +41,11 @@ export default function App() {
   const [phoneNumber, setPhoneNumber] = useState(null);
   const [email, setEmail] = useState(null);
   const [company, setCompany] = useState("");
+  const [information, setInformation] = useState(null);
+
+  useEffect(() => {
+    loadInformation();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -54,16 +62,16 @@ export default function App() {
     setName(null);
     setPhoneNumber(null);
     setEmail(null);
-    setCompany("")
-    callGoogleVisionAsync(image)
+    setCompany("");
+    callGoogleVisionAsync(image);
   }, [image]);
 
   useEffect(() => {
     const data = detectItems(detected);
     setName(data.name);
-    setPhoneNumber(data.phoneNumber)
-    setEmail(data.email)
-  }, [detected])
+    setPhoneNumber(data.phoneNumber);
+    setEmail(data.email);
+  }, [detected]);
 
   const generateBody = (image) => {
     const body = {
@@ -104,6 +112,18 @@ export default function App() {
     return responseFromGoogle
       ? responseFromGoogle
       : { text: "No text detected." };
+  };
+
+  const loadInformation = async () => {
+    try {
+      const previousInformation = await AsyncStorage.getItem(STORAGE_KEY);
+      if (previousInformation) {
+        setInformation(JSON.parse(previousInformation));
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    return;
   };
 
   const onChangeName = (name) => setName(name);
@@ -150,6 +170,32 @@ export default function App() {
     if (!result.cancelled) {
       setPhotoFromLibrary(result.uri);
       setImage(result.base64);
+    }
+  };
+
+  const addInformation = async () => {
+    if (
+      name === null ||
+      name === "" ||
+      phoneNumber === null ||
+      phoneNumber === ""
+    ) {
+      Alert.alert("Name and Phone Number must be provided.");
+    } else {
+      const newInformation = {
+        ...information,
+        [Date.now()]: {
+          name,
+          phoneNumber,
+          email,
+          company,
+          edit: false,
+        },
+      };
+      setInformation(newInformation);
+      await saveInformation(newInformation, STORAGE_KEY);
+      Alert.alert("Saved!");
+      setImage(null);
     }
   };
 
@@ -248,6 +294,7 @@ export default function App() {
               title="Save"
               style={{}}
               onPress={() => {
+                addInformation();
                 setPhoto(null);
               }}
             />
