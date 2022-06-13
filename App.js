@@ -49,6 +49,9 @@ export default function App() {
     email: "",
     company: "",
   });
+  const [searchView, setSearchView] = useState(false);
+  const [searchedArray, setSearchedArray] = useState(information);
+  const [searchString, setSearchString] = useState("");
 
   useEffect(() => {
     loadInformation();
@@ -79,6 +82,27 @@ export default function App() {
     setPhoneNumber(data.phoneNumber);
     setEmail(data.email);
   }, [detected]);
+
+  useEffect(() => {
+    if (searchString.length === 0) {
+      setSearchedArray(information);
+    } else {
+      const searchedObjects = {};
+      Object.keys(information).map((key) => {
+        if (
+          information[key].name
+            .toLowerCase()
+            .includes(searchString.toLowerCase()) ||
+          information[key].company
+            .toLowerCase()
+            .includes(searchString.toLowerCase())
+        ) {
+          searchedObjects[key] = information[key];
+        }
+      });
+      setSearchedArray(searchedObjects);
+    }
+  }, [searchString]);
 
   const generateBody = (image) => {
     const body = {
@@ -126,11 +150,11 @@ export default function App() {
       const previousInformation = await AsyncStorage.getItem(STORAGE_KEY);
       if (previousInformation) {
         setInformation(JSON.parse(previousInformation));
+        setSearchedArray(JSON.parse(previousInformation));
       }
     } catch (e) {
       console.log(e);
     }
-    return;
   };
 
   const onChangeName = (name) => setName(name);
@@ -143,6 +167,7 @@ export default function App() {
       [name]: value,
     });
   };
+  const onChangeSearchString = (payload) => setSearchString(payload);
 
   if (cameraPermission === undefined) {
     return <Text>Requesting Permission</Text>;
@@ -207,6 +232,7 @@ export default function App() {
       };
       setInformation(newInformation);
       await saveInformation(newInformation, STORAGE_KEY);
+      setSearchedArray(newInformation);
       Alert.alert("Saved!");
       setImage(null);
     }
@@ -219,6 +245,7 @@ export default function App() {
       }
     });
     await saveInformation(information, STORAGE_KEY);
+    setSearchedArray(information);
   };
 
   const edit = async (key) => {
@@ -236,6 +263,7 @@ export default function App() {
     }
     setInformation(newInformation);
     await saveInformation(newInformation, STORAGE_KEY);
+    setSearchedArray(newInformation);
   };
 
   const editInformation = async (key) => {
@@ -273,34 +301,6 @@ export default function App() {
     ]);
     return;
   };
-
-  if (photo) {
-    return (
-      <View style={styles.container}>
-        <Image
-          style={styles.img}
-          source={{ uri: "data:image/jpg;base64," + photo.base64 }}
-        ></Image>
-        <View style={styles.photoButtonView}>
-          {libraryPermission ? (
-            <Button
-              title="Save and Continue"
-              onPress={() => {
-                savePhoto();
-              }}
-            />
-          ) : undefined}
-          <Button title="Don't save and continue" onPress={() => {}} />
-          <Button
-            title="Discard"
-            onPress={() => {
-              setPhoto(undefined);
-            }}
-          />
-        </View>
-      </View>
-    );
-  }
 
   if (image) {
     return (
@@ -367,7 +367,6 @@ export default function App() {
             />
             <Button
               title="Save"
-              style={{}}
               onPress={() => {
                 addInformation();
                 setPhoto(null);
@@ -376,6 +375,37 @@ export default function App() {
           </View>
         </View>
       </KeyboardAvoidingView>
+    );
+  }
+
+  if (photo) {
+    return (
+      <View style={styles.container}>
+        <Image
+          style={styles.img}
+          source={{ uri: "data:image/jpg;base64," + photo.base64 }}
+        ></Image>
+        <View style={styles.photoButtonView}>
+          {libraryPermission ? (
+            <Button
+              title="Save and Continue"
+              onPress={() => {
+                savePhoto();
+                setPhotoFromLibrary(photo.uri);
+                setImage(photo.base64);
+              }}
+            />
+          ) : undefined}
+          <Button
+            title="Don't save and continue"
+            onPress={() => {
+              setImage(photo.base64);
+              setPhotoFromLibrary(photo.uri);
+            }}
+          />
+          <Button title="Discard" onPress={() => setPhoto(undefined)} />
+        </View>
+      </View>
     );
   }
 
@@ -483,6 +513,120 @@ export default function App() {
       </KeyboardAvoidingView>
     );
   }
+  if (searchView) {
+    return (
+      <KeyboardAvoidingView
+        enabled
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.listViewContainer}
+      >
+        <Button
+          title="Back to Main Menu"
+          onPress={() => {
+            setSearchView(false);
+            backToFalse();
+            setSearchString("");
+          }}
+        />
+        <View style={{ alignItems: "center" }}>
+          <TextInput
+            style={styles.searchTextInput}
+            placeholder="Search Name or Company"
+            value={searchString}
+            onChangeText={onChangeSearchString}
+          />
+        </View>
+        <ScrollView>
+          {Object.keys(searchedArray).map((key) => (
+            <View key={key}>
+              {!searchedArray[key].edit ? (
+                <View>
+                  {!searchedArray[key].company !== "" && (
+                    <Text style={styles.listViewText}>
+                      Company: {searchedArray[key].company}
+                    </Text>
+                  )}
+                  <Text style={styles.listViewText}>
+                    Name: {searchedArray[key].name}
+                  </Text>
+                  <Text style={styles.listViewText}>
+                    P.N: {searchedArray[key].phoneNumber}
+                  </Text>
+                  <Text style={styles.listViewText}>
+                    Email: {searchedArray[key].email}
+                  </Text>
+                </View>
+              ) : (
+                <View>
+                  <Text style={styles.listViewText}>Company:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("company", text);
+                    }}
+                    value={editData.company}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                  <Text style={styles.listViewText}>Name:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("name", text);
+                    }}
+                    value={editData.name}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                  <Text style={styles.listViewText}>P.N:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("phoneNumber", text);
+                    }}
+                    value={editData.phoneNumber}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                  <Text style={styles.listViewText}>Email:</Text>
+                  <TextInput
+                    style={styles.listViewTextInput}
+                    onChangeText={(text) => {
+                      onChangeEditInformation("email", text);
+                    }}
+                    value={editData.email}
+                    returnKeyType="done"
+                    enablesReturnKeyAutomatically
+                    onSubmitEditing={() => {
+                      editInformation(key);
+                    }}
+                  />
+                </View>
+              )}
+              <View style={styles.listViewButtonView}>
+                <Button title="Edit" onPress={() => edit(key)} />
+                <Button
+                  title="Delete"
+                  onPress={() => {
+                    deleteInformation(key);
+                  }}
+                />
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -517,7 +661,13 @@ export default function App() {
             >
               <Text style={styles.text1}>Choose From Library</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.t1}>
+            <TouchableOpacity
+              style={styles.t1}
+              onPress={() => {
+                setSearchView(true);
+                setSearchString("");
+              }}
+            >
               <Text style={styles.text1}>Search</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -669,5 +819,13 @@ const styles = StyleSheet.create({
   listViewButtonView: {
     flexDirection: "row",
     justifyContent: "space-evenly",
+  },
+  searchTextInput: {
+    height: 50,
+    width: SCREEN_WIDTH - 50,
+    borderWidth: 3,
+    borderColor: "black",
+    borderRadius: 4,
+    fontSize: 30,
   },
 });
