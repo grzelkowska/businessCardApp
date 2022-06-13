@@ -423,7 +423,7 @@ export default function App() {
           }}
         />
         <ScrollView style={styles.listViewScrollView}>
-          {Object.keys(information).map((key) => (
+          {Object.keys(information).reverse().map((key) => (
             <View key={key}>
               {!information[key].edit ? (
                 <View>
