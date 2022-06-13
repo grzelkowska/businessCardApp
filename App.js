@@ -21,6 +21,7 @@ import { GOOGLE_CLOUD_VISION_API_KEY } from "./secret";
 import detectItems from "./detectItems";
 import saveInformation from "./saveInformation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Contacts from "expo-contacts";
 
 const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
@@ -52,6 +53,7 @@ export default function App() {
   const [searchView, setSearchView] = useState(false);
   const [searchedArray, setSearchedArray] = useState(information);
   const [searchString, setSearchString] = useState("");
+  const [contactPermission, setContactPermission] = useState(false);
 
   useEffect(() => {
     loadInformation();
@@ -65,6 +67,14 @@ export default function App() {
         await MediaLibrary.requestPermissionsAsync();
       setCameraPermission(requestCameraPermission.status === "granted");
       setLibraryPermission(requestLibraryPermission.status === "granted");
+    })();
+  }, []);
+
+  // contacts
+  useEffect(() => {
+    (async () => {
+      const requestContactPermission = await Contacts.requestPermissionsAsync();
+      setContactPermission(requestContactPermission.status === "granted");
     })();
   }, []);
 
@@ -238,7 +248,7 @@ export default function App() {
       await saveInformation(newInformation, STORAGE_KEY);
       setSearchedArray(newInformation);
       Alert.alert("Saved!");
-      setImage(null);
+      // setImage(null);
     }
   };
 
@@ -306,6 +316,17 @@ export default function App() {
     return;
   };
 
+  const saveToContact = async (name, phoneNumber) => {
+    const contact = {
+      [Contacts.Fields.FirstName]: name.slice(1, name.length),
+      [Contacts.Fields.LastName]: name[0],
+      [Contacts.Fields.PhoneNumbers]: [{ number: phoneNumber }],
+    };
+    await Contacts.addContactAsync(contact);
+    Alert.alert("Saved to Contact");
+    // setImage(null);
+  };
+
   if (image) {
     return (
       <KeyboardAvoidingView
@@ -338,11 +359,9 @@ export default function App() {
               style={styles.photoFromLibrary}
             />
           </View>
-          <View style={styles.photoFromLibraryView}>
-            <ScrollView>
-              <Text style={styles.photoFromLibraryDetectText}>{detected}</Text>
-            </ScrollView>
-          </View>
+          <ScrollView style={styles.photoFromLibraryView}>
+            <Text style={styles.photoFromLibraryDetectText}>{detected}</Text>
+          </ScrollView>
           <View style={styles.photoFromLibraryInputView}>
             <Text>Name</Text>
             <TextInput
@@ -369,13 +388,22 @@ export default function App() {
               onChangeText={onChangeCompany}
               placeholder="(Optional)"
             />
-            <Button
-              title="Save"
-              onPress={() => {
-                addInformation();
-                setPhoto(null);
-              }}
-            />
+            <View>
+              <Button
+                title="Save"
+                onPress={() => {
+                  addInformation();
+                  setPhoto(null);
+                }}
+              />
+              <Button
+                title="Save to Contact"
+                onPress={() => {
+                  saveToContact(name, phoneNumber);
+                  setPhoto(null);
+                }}
+              />
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -786,6 +814,10 @@ const styles = StyleSheet.create({
   },
   photoFromLibraryView: {
     flex: 1,
+    padding: 10,
+    borderWidth: 3,
+    borderRadius: 5,
+    borderWidth: 5,
   },
   photoFromLibraryInputView: {
     flex: 2,
