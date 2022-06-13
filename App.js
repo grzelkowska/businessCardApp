@@ -135,9 +135,13 @@ export default function App() {
     })
       .then((response) => response.json())
       .then((result) => {
-        const googleDetected = result.responses[0].fullTextAnnotation;
-        setDetected(googleDetected.text);
-        detectItems(detected);
+        try {
+          const googleDetected = result.responses[0].fullTextAnnotation;
+          setDetected(googleDetected.text);
+          detectItems(detected);
+        } catch (e) {
+          console.log(e);
+        }
       });
 
     return responseFromGoogle
@@ -423,92 +427,94 @@ export default function App() {
           }}
         />
         <ScrollView style={styles.listViewScrollView}>
-          {Object.keys(information).reverse().map((key) => (
-            <View key={key}>
-              {!information[key].edit ? (
-                <View>
-                  {information[key].company !== "" && (
+          {Object.keys(information)
+            .reverse()
+            .map((key) => (
+              <View key={key}>
+                {!information[key].edit ? (
+                  <View>
+                    {information[key].company !== "" && (
+                      <Text style={styles.listViewText}>
+                        Company: {information[key].company}
+                      </Text>
+                    )}
                     <Text style={styles.listViewText}>
-                      Company: {information[key].company}
+                      Name: {information[key].name}
                     </Text>
-                  )}
-                  <Text style={styles.listViewText}>
-                    Name: {information[key].name}
-                  </Text>
-                  <Text style={styles.listViewText}>
-                    P.N: {information[key].phoneNumber}
-                  </Text>
-                  <Text style={styles.listViewText}>
-                    Email: {information[key].email}
-                  </Text>
+                    <Text style={styles.listViewText}>
+                      P.N: {information[key].phoneNumber}
+                    </Text>
+                    <Text style={styles.listViewText}>
+                      Email: {information[key].email}
+                    </Text>
+                  </View>
+                ) : (
+                  <View>
+                    <Text style={styles.listViewText}>Company:</Text>
+                    <TextInput
+                      style={styles.listViewTextInput}
+                      onChangeText={(text) => {
+                        onChangeEditInformation("company", text);
+                      }}
+                      value={editData.company}
+                      returnKeyType="done"
+                      enablesReturnKeyAutomatically
+                      onSubmitEditing={() => {
+                        editInformation(key);
+                      }}
+                    />
+                    <Text style={styles.listViewText}>Name:</Text>
+                    <TextInput
+                      style={styles.listViewTextInput}
+                      onChangeText={(text) => {
+                        onChangeEditInformation("name", text);
+                      }}
+                      value={editData.name}
+                      returnKeyType="done"
+                      enablesReturnKeyAutomatically
+                      onSubmitEditing={() => {
+                        editInformation(key);
+                      }}
+                    />
+                    <Text style={styles.listViewText}>P.N:</Text>
+                    <TextInput
+                      style={styles.listViewTextInput}
+                      onChangeText={(text) => {
+                        onChangeEditInformation("phoneNumber", text);
+                      }}
+                      value={editData.phoneNumber}
+                      returnKeyType="done"
+                      enablesReturnKeyAutomatically
+                      onSubmitEditing={() => {
+                        editInformation(key);
+                      }}
+                    />
+                    <Text style={styles.listViewText}>Email:</Text>
+                    <TextInput
+                      style={styles.listViewTextInput}
+                      onChangeText={(text) => {
+                        onChangeEditInformation("email", text);
+                      }}
+                      value={editData.email}
+                      returnKeyType="done"
+                      enablesReturnKeyAutomatically
+                      onSubmitEditing={() => {
+                        editInformation(key);
+                      }}
+                    />
+                  </View>
+                )}
+                <View style={styles.listViewButtonView}>
+                  <Button title="Edit" onPress={() => edit(key)} />
+                  <Button
+                    title="Delete"
+                    onPress={() => {
+                      deleteInformation(key);
+                    }}
+                  />
                 </View>
-              ) : (
-                <View>
-                  <Text style={styles.listViewText}>Company:</Text>
-                  <TextInput
-                    style={styles.listViewTextInput}
-                    onChangeText={(text) => {
-                      onChangeEditInformation("company", text);
-                    }}
-                    value={editData.company}
-                    returnKeyType="done"
-                    enablesReturnKeyAutomatically
-                    onSubmitEditing={() => {
-                      editInformation(key);
-                    }}
-                  />
-                  <Text style={styles.listViewText}>Name:</Text>
-                  <TextInput
-                    style={styles.listViewTextInput}
-                    onChangeText={(text) => {
-                      onChangeEditInformation("name", text);
-                    }}
-                    value={editData.name}
-                    returnKeyType="done"
-                    enablesReturnKeyAutomatically
-                    onSubmitEditing={() => {
-                      editInformation(key);
-                    }}
-                  />
-                  <Text style={styles.listViewText}>P.N:</Text>
-                  <TextInput
-                    style={styles.listViewTextInput}
-                    onChangeText={(text) => {
-                      onChangeEditInformation("phoneNumber", text);
-                    }}
-                    value={editData.phoneNumber}
-                    returnKeyType="done"
-                    enablesReturnKeyAutomatically
-                    onSubmitEditing={() => {
-                      editInformation(key);
-                    }}
-                  />
-                  <Text style={styles.listViewText}>Email:</Text>
-                  <TextInput
-                    style={styles.listViewTextInput}
-                    onChangeText={(text) => {
-                      onChangeEditInformation("email", text);
-                    }}
-                    value={editData.email}
-                    returnKeyType="done"
-                    enablesReturnKeyAutomatically
-                    onSubmitEditing={() => {
-                      editInformation(key);
-                    }}
-                  />
-                </View>
-              )}
-              <View style={styles.listViewButtonView}>
-                <Button title="Edit" onPress={() => edit(key)} />
-                <Button
-                  title="Delete"
-                  onPress={() => {
-                    deleteInformation(key);
-                  }}
-                />
               </View>
-            </View>
-          ))}
+            ))}
         </ScrollView>
       </KeyboardAvoidingView>
     );
