@@ -575,7 +575,7 @@ export default function App() {
             <View key={key}>
               {!searchedArray[key].edit ? (
                 <View>
-                  {!searchedArray[key].company !== "" && (
+                  {searchedArray[key].company !== "" && (
                     <Text style={styles.listViewText}>
                       Company: {searchedArray[key].company}
                     </Text>
