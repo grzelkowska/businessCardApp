@@ -22,6 +22,8 @@ import detectItems from "./detectItems";
 import saveInformation from "./saveInformation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Contacts from "expo-contacts";
+import { Feather } from "@expo/vector-icons";
+import * as Clipboard from 'expo-clipboard';
 
 const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
@@ -324,8 +326,12 @@ export default function App() {
     };
     await Contacts.addContactAsync(contact);
     Alert.alert("Saved to Contact");
-    // setImage(null);
   };
+
+  
+  const copyToClipboard = async (str) => {
+    await Clipboard.setStringAsync(str);
+    };
 
   if (image) {
     return (
@@ -396,13 +402,15 @@ export default function App() {
                   setPhoto(null);
                 }}
               />
-              <Button
-                title="Save to Contact"
-                onPress={() => {
-                  saveToContact(name, phoneNumber);
-                  setPhoto(null);
-                }}
-              />
+              {contactPermission && (
+                <Button
+                  title="Save to Contact"
+                  onPress={() => {
+                    saveToContact(name, phoneNumber);
+                    setPhoto(null);
+                  }}
+                />
+              )}
             </View>
           </View>
         </View>
@@ -466,15 +474,42 @@ export default function App() {
                         Company: {information[key].company}
                       </Text>
                     )}
-                    <Text style={styles.listViewText}>
-                      Name: {information[key].name}
-                    </Text>
-                    <Text style={styles.listViewText}>
-                      P.N: {information[key].phoneNumber}
-                    </Text>
-                    <Text style={styles.listViewText}>
-                      Email: {information[key].email}
-                    </Text>
+                    <View style={{ flexDirection: "row" }}>
+                      <Text style={styles.listViewText}>
+                        Name: {information[key].name}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          copyToClipboard(information[key].name);
+                        }}
+                      >
+                        <Feather name="copy" size={18} color="tomato" />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={{ flexDirection: "row" }}>
+                      <Text style={styles.listViewText}>
+                        P.N: {information[key].phoneNumber}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          copyToClipboard(information[key].phoneNumber);
+                        }}
+                      >
+                        <Feather name="copy" size={18} color="tomato" />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={{ flexDirection: "row" }}>
+                      <Text style={styles.listViewText}>
+                        Email: {information[key].email}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          copyToClipboard(information[key].email);
+                        }}
+                      >
+                        <Feather name="copy" size={18} color="tomato" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : (
                   <View>
