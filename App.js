@@ -23,7 +23,7 @@ import saveInformation from "./saveInformation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Contacts from "expo-contacts";
 import { Feather } from "@expo/vector-icons";
-import * as Clipboard from 'expo-clipboard';
+import * as Clipboard from "expo-clipboard";
 
 const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
@@ -328,10 +328,9 @@ export default function App() {
     Alert.alert("Saved to Contact");
   };
 
-  
   const copyToClipboard = async (str) => {
     await Clipboard.setStringAsync(str);
-    };
+  };
 
   if (image) {
     return (
@@ -474,6 +473,7 @@ export default function App() {
                         Company: {information[key].company}
                       </Text>
                     )}
+
                     <View style={{ flexDirection: "row" }}>
                       <Text style={styles.listViewText}>
                         Name: {information[key].name}
@@ -486,6 +486,7 @@ export default function App() {
                         <Feather name="copy" size={18} color="tomato" />
                       </TouchableOpacity>
                     </View>
+
                     <View style={{ flexDirection: "row" }}>
                       <Text style={styles.listViewText}>
                         P.N: {information[key].phoneNumber}
@@ -498,6 +499,7 @@ export default function App() {
                         <Feather name="copy" size={18} color="tomato" />
                       </TouchableOpacity>
                     </View>
+
                     <View style={{ flexDirection: "row" }}>
                       <Text style={styles.listViewText}>
                         Email: {information[key].email}
@@ -615,15 +617,42 @@ export default function App() {
                       Company: {searchedArray[key].company}
                     </Text>
                   )}
-                  <Text style={styles.listViewText}>
-                    Name: {searchedArray[key].name}
-                  </Text>
-                  <Text style={styles.listViewText}>
-                    P.N: {searchedArray[key].phoneNumber}
-                  </Text>
-                  <Text style={styles.listViewText}>
-                    Email: {searchedArray[key].email}
-                  </Text>
+                  <View style={{ flexDirection: "row" }}>
+                    <Text style={styles.listViewText}>
+                      Name: {searchedArray[key].name}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        copyToClipboard(searchedArray[key].name);
+                      }}
+                    >
+                      <Feather name="copy" size={18} color="tomato" />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ flexDirection: "row" }}>
+                    <Text style={styles.listViewText}>
+                      P.N: {searchedArray[key].phoneNumber}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        copyToClipboard(searchedArray[key].phoneNumber);
+                      }}
+                    >
+                      <Feather name="copy" size={18} color="tomato" />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ flexDirection: "row" }}>
+                    <Text style={styles.listViewText}>
+                      Email: {searchedArray[key].email}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        copyToClipboard(searchedArray[key].email);
+                      }}
+                    >
+                      <Feather name="copy" size={18} color="tomato" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ) : (
                 <View>
