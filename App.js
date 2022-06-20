@@ -24,6 +24,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Contacts from "expo-contacts";
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
+import * as Linking from "expo-linking";
 
 const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
@@ -483,7 +484,7 @@ export default function App() {
                           copyToClipboard(information[key].name);
                         }}
                       >
-                        <Feather name="copy" size={18} color="tomato" />
+                        <Feather name="copy" size={30} color="tomato" />
                       </TouchableOpacity>
                     </View>
 
@@ -496,7 +497,16 @@ export default function App() {
                           copyToClipboard(information[key].phoneNumber);
                         }}
                       >
-                        <Feather name="copy" size={18} color="tomato" />
+                        <Feather name="copy" size={30} color="tomato" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Linking.openURL(
+                            `tel:${information[key].phoneNumber}`
+                          );
+                        }}
+                      >
+                        <Feather name="phone-outgoing" size={30} color="teal" />
                       </TouchableOpacity>
                     </View>
 
@@ -509,7 +519,7 @@ export default function App() {
                           copyToClipboard(information[key].email);
                         }}
                       >
-                        <Feather name="copy" size={18} color="tomato" />
+                        <Feather name="copy" size={30} color="tomato" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -626,20 +636,38 @@ export default function App() {
                         copyToClipboard(searchedArray[key].name);
                       }}
                     >
-                      <Feather name="copy" size={18} color="tomato" />
+                      <Feather name="copy" size={30} color="tomato" />
                     </TouchableOpacity>
                   </View>
                   <View style={{ flexDirection: "row" }}>
                     <Text style={styles.listViewText}>
                       P.N: {searchedArray[key].phoneNumber}
                     </Text>
-                    <TouchableOpacity
+                    <View style={{flexDirection: "row", justifyContent: "space-between"}}>
+                    <TouchableOpacity 
                       onPress={() => {
                         copyToClipboard(searchedArray[key].phoneNumber);
                       }}
                     >
-                      <Feather name="copy" size={18} color="tomato" />
+                      <Feather name="copy" size={30} color="tomato" />
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        Linking.openURL(`sms:${information[key].phoneNumber}`)
+                      }}
+                    >
+                      <Feather name="message-square" size={32} color="lightslategrey" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        Linking.openURL(`tel:${information[key].phoneNumber}`);
+                      }}
+                    >
+                      <Feather name="phone-outgoing" size={30} color="teal" />
+                    </TouchableOpacity>
+                    </View>  
                   </View>
                   <View style={{ flexDirection: "row" }}>
                     <Text style={styles.listViewText}>
@@ -650,7 +678,7 @@ export default function App() {
                         copyToClipboard(searchedArray[key].email);
                       }}
                     >
-                      <Feather name="copy" size={18} color="tomato" />
+                      <Feather name="copy" size={30} color="tomato" />
                     </TouchableOpacity>
                   </View>
                 </View>
