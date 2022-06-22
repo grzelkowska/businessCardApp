@@ -29,6 +29,7 @@ import * as Linking from "expo-linking";
 const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
 const STORAGE_KEY = "@NPEC";
+const COUNT_KEY = "@COUNT";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -57,9 +58,13 @@ export default function App() {
   const [searchedArray, setSearchedArray] = useState(information);
   const [searchString, setSearchString] = useState("");
   const [contactPermission, setContactPermission] = useState(false);
+  const [googleCount, setGoogleCount] = useState(0);
 
   useEffect(() => {
     loadInformation();
+    loadCount();
+
+    // console.log("1useEffect: ", googleCount);
   }, []);
 
   useEffect(() => {
@@ -86,7 +91,11 @@ export default function App() {
     setPhoneNumber(null);
     setEmail(null);
     setCompany("");
-    callGoogleVisionAsync(image);
+
+    if (image !== null) {
+      callGoogleVisionAsync(image);
+      setGoogleCount((prev) => prev + 1);
+    }
   }, [image]);
 
   useEffect(() => {
@@ -116,6 +125,14 @@ export default function App() {
       setSearchedArray(searchedObjects);
     }
   }, [searchString]);
+
+  useEffect(() => {
+    saveCount()
+    if (googleCount > 800) {
+      Alert.alert("Google API Usage over 800");
+      return;
+    }
+  }, [googleCount])
 
   const generateBody = (image) => {
     const body = {
@@ -156,7 +173,6 @@ export default function App() {
           console.log(e);
         }
       });
-
     return responseFromGoogle
       ? responseFromGoogle
       : { text: "No text detected." };
@@ -169,6 +185,26 @@ export default function App() {
         setInformation(JSON.parse(previousInformation));
         setSearchedArray(JSON.parse(previousInformation));
       }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const loadCount = async () => {
+    try {
+      const previousCount = await AsyncStorage.getItem(COUNT_KEY);
+      if (previousCount) {
+        setGoogleCount(parseInt(previousCount));
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const saveCount = async () => {
+    try {
+      await AsyncStorage.setItem(COUNT_KEY, JSON.stringify(googleCount));
+      console.log("GoogleAPIUsageCount: ", googleCount);
     } catch (e) {
       console.log(e);
     }
@@ -466,7 +502,7 @@ export default function App() {
           {Object.keys(information)
             .reverse()
             .map((key) => (
-              <View key={key}>
+              <View key={key} style={styles.searchViewBuisnessCard}>
                 {!information[key].edit ? (
                   <View>
                     {information[key].company !== "" && (
@@ -487,7 +523,6 @@ export default function App() {
                         <Feather name="copy" size={30} color="tomato" />
                       </TouchableOpacity>
                     </View>
-
                     <View style={{ flexDirection: "row" }}>
                       <Text style={styles.listViewText}>
                         P.N: {information[key].phoneNumber}
@@ -498,6 +533,19 @@ export default function App() {
                         }}
                       >
                         <Feather name="copy" size={30} color="tomato" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Linking.openURL(
+                            `sms:${information[key].phoneNumber}`
+                          );
+                        }}
+                      >
+                        <Feather
+                          name="message-square"
+                          size={32}
+                          color="lightslategrey"
+                        />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => {
@@ -619,7 +667,7 @@ export default function App() {
         </View>
         <ScrollView>
           {Object.keys(searchedArray).map((key) => (
-            <View key={key}>
+            <View key={key} style={styles.searchViewBuisnessCard}>
               {!searchedArray[key].edit ? (
                 <View>
                   {searchedArray[key].company !== "" && (
@@ -643,31 +691,43 @@ export default function App() {
                     <Text style={styles.listViewText}>
                       P.N: {searchedArray[key].phoneNumber}
                     </Text>
-                    <View style={{flexDirection: "row", justifyContent: "space-between"}}>
-                    <TouchableOpacity 
-                      onPress={() => {
-                        copyToClipboard(searchedArray[key].phoneNumber);
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <Feather name="copy" size={30} color="tomato" />
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          copyToClipboard(searchedArray[key].phoneNumber);
+                        }}
+                      >
+                        <Feather name="copy" size={30} color="tomato" />
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      onPress={() => {
-                        Linking.openURL(`sms:${information[key].phoneNumber}`)
-                      }}
-                    >
-                      <Feather name="message-square" size={32} color="lightslategrey" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => {
-                        Linking.openURL(`tel:${information[key].phoneNumber}`);
-                      }}
-                    >
-                      <Feather name="phone-outgoing" size={30} color="teal" />
-                    </TouchableOpacity>
-                    </View>  
+                      <TouchableOpacity
+                        onPress={() => {
+                          Linking.openURL(
+                            `sms:${searchedArray[key].phoneNumber}`
+                          );
+                        }}
+                      >
+                        <Feather
+                          name="message-square"
+                          size={32}
+                          color="lightslategrey"
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Linking.openURL(
+                            `tel:${searchedArray[key].phoneNumber}`
+                          );
+                        }}
+                      >
+                        <Feather name="phone-outgoing" size={30} color="teal" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                   <View style={{ flexDirection: "row" }}>
                     <Text style={styles.listViewText}>
@@ -957,5 +1017,10 @@ const styles = StyleSheet.create({
     borderColor: "black",
     borderRadius: 4,
     fontSize: 30,
+  },
+  searchViewBuisnessCard: {
+    borderWidth: 3,
+    borderColor: "gainsboro",
+    borderRadius: 10,
   },
 });
