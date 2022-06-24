@@ -30,8 +30,12 @@ const API_KEY = GOOGLE_CLOUD_VISION_API_KEY;
 const API_URL = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
 const STORAGE_KEY = "@NPEC";
 const COUNT_KEY = "@COUNT";
+const DATE_KEY = "@DATE";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+// const startDate = new Date;
+// console.log(startDate)
+// console.log(typeof(startDate))
 
 export default function App() {
   const cameraRef = useRef();
@@ -59,12 +63,12 @@ export default function App() {
   const [searchString, setSearchString] = useState("");
   const [contactPermission, setContactPermission] = useState(false);
   const [googleCount, setGoogleCount] = useState(0);
+  const [startDate, setStartDate] = useState("");
 
   useEffect(() => {
     loadInformation();
     loadCount();
-
-    // console.log("1useEffect: ", googleCount);
+    loadDate();
   }, []);
 
   useEffect(() => {
@@ -78,7 +82,6 @@ export default function App() {
     })();
   }, []);
 
-  // contacts
   useEffect(() => {
     (async () => {
       const requestContactPermission = await Contacts.requestPermissionsAsync();
@@ -127,12 +130,16 @@ export default function App() {
   }, [searchString]);
 
   useEffect(() => {
-    saveCount()
+    saveCount();
     if (googleCount > 800) {
       Alert.alert("Google API Usage over 800");
       return;
     }
-  }, [googleCount])
+  }, [googleCount]);
+
+  useEffect(() => {
+    saveDate();
+  }, [startDate]);
 
   const generateBody = (image) => {
     const body = {
@@ -205,6 +212,57 @@ export default function App() {
     try {
       await AsyncStorage.setItem(COUNT_KEY, JSON.stringify(googleCount));
       console.log("GoogleAPIUsageCount: ", googleCount);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const loadDate = async () => {
+    const todayDate = new Date();
+    console.log("todayDate:", todayDate);
+    // AsyncStorage.removeItem(DATE_KEY)
+    try {
+      const firstDate = await AsyncStorage.getItem(DATE_KEY);
+      if (firstDate) {
+        const beginDate = new Date(JSON.parse(firstDate));
+        const compareDate = new Date(JSON.parse(firstDate));
+
+        if (
+          todayDate >=
+          new Date(compareDate.setMonth(compareDate.getMonth() + 1))
+        ) {
+          if (todayDate.getDate() < beginDate.getDate()) {
+            beginDate = beginDate.setMonth(
+              beginDate.getMonth() +
+                (todayDate.getMonth() - beginDate.getMonth() - 1)
+            );
+          } else if (todayDate.getDate() >= beginDate.getDate()) {
+            beginDate = beginDate.setMonth(
+              beginDate.getMonth() +
+                (todayDate.getMonth() - beginDate.getMonth())
+            );
+          }
+          setGoogleCount(0);
+          // beginDate = beginDate.setMonth(beginDate.getMonth() + 1);
+        }
+        setStartDate(new Date(beginDate));
+        console.log("beginDate: ", new Date(beginDate));
+        console.log("startDate: ", startDate);
+      } else {
+        const newDate = new Date();
+        setStartDate(newDate);
+        console.log("newDate: ", newDate);
+        saveDate();
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const saveDate = async () => {
+    try {
+      await AsyncStorage.setItem(DATE_KEY, JSON.stringify(startDate));
+      console.log("saveDate: ", startDate);
     } catch (e) {
       console.log(e);
     }
@@ -287,7 +345,6 @@ export default function App() {
       await saveInformation(newInformation, STORAGE_KEY);
       setSearchedArray(newInformation);
       Alert.alert("Saved!");
-      // setImage(null);
     }
   };
 
